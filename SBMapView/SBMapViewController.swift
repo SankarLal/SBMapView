@@ -13,9 +13,9 @@ class SBMapViewController: UIViewController, MKMapViewDelegate, CLLocationManage
         // Do any additional setup after loading the view, typically from a nib.
         
         self.title = "SB MAP VIEW DEMO"
-        let plotRouteButton : UIBarButtonItem = UIBarButtonItem (title: "Plot Route", style: UIBarButtonItemStyle.Plain, target: self, action: "plotRoute")
+        let plotRouteButton : UIBarButtonItem = UIBarButtonItem (title: "Plot Route", style: UIBarButtonItemStyle.plain, target: self, action: #selector(self.plotRoute))
         
-        self.navigationItem.setRightBarButtonItem(plotRouteButton, animated: true)
+        self.navigationItem.setRightBarButton(plotRouteButton, animated: true)
                 
         initializeLocationManager()
         setUpMapView()
@@ -28,13 +28,8 @@ class SBMapViewController: UIViewController, MKMapViewDelegate, CLLocationManage
     func initializeLocationManager () {
         currentLocationManager = CLLocationManager ()
         currentLocationManager.delegate = self
-        if currentLocationManager.respondsToSelector("requestWhenInUseAuthorization") {
-            currentLocationManager.requestWhenInUseAuthorization()
-        }
-        if currentLocationManager.respondsToSelector("requestAlwaysAuthorization") {
-            currentLocationManager.requestAlwaysAuthorization()
-        }
-        
+        currentLocationManager.requestWhenInUseAuthorization()
+        currentLocationManager.requestAlwaysAuthorization()
         currentLocationManager.startUpdatingLocation()
         
     }
@@ -44,7 +39,7 @@ class SBMapViewController: UIViewController, MKMapViewDelegate, CLLocationManage
         
         mapView = MKMapView (frame: self.view.bounds)
         mapView.delegate = self
-        mapView.mapType = .Hybrid
+        mapView.mapType = .hybrid
         mapView.showsUserLocation = true
         self.view.addSubview(mapView)
         
@@ -71,7 +66,7 @@ class SBMapViewController: UIViewController, MKMapViewDelegate, CLLocationManage
     }
     
     // MARK: Plot Route
-    func plotRoute () {
+   @objc func plotRoute () {
         
         let _srcCoord : CLLocationCoordinate2D = CLLocationCoordinate2DMake(53.7709505, 12.5753569)
         let _srcMark : MKPlacemark = MKPlacemark (coordinate: _srcCoord, addressDictionary: nil)
@@ -85,25 +80,27 @@ class SBMapViewController: UIViewController, MKMapViewDelegate, CLLocationManage
         
     }
     
-    func findDirectionsFrom (source : MKMapItem, destination : MKMapItem) {
+    func findDirectionsFrom (_ source : MKMapItem, destination : MKMapItem) {
         
         let request : MKDirectionsRequest = MKDirectionsRequest ()
         request.source = source
-        request.transportType = .Automobile
+        request.transportType = .automobile
         request.destination = destination;
         
         let directions : MKDirections = MKDirections (request: request)
         
-        directions.calculateDirectionsWithCompletionHandler { (response : MKDirectionsResponse?, error : NSError? ) -> Void in
+        directions.calculate { (response : MKDirectionsResponse?, error : Error? ) -> Void in
             if let _ = error {
                 print("ERROR")
-                let alert = UIAlertController (title: "Error!", message: "A route to the nearest road cannot be determined", preferredStyle: UIAlertControllerStyle.Alert)
+                let alert = UIAlertController (title: "Error!", message: "A route to the nearest road cannot be determined", preferredStyle: UIAlertControllerStyle.alert)
                 
-                alert.addAction(UIAlertAction (title: "OK", style: UIAlertActionStyle.Default, handler: { action in action.style
+                alert.addAction(UIAlertAction (title: "OK", style: UIAlertActionStyle.default, handler: { action in
                     
                     print("OK")
                 }))
-                self.navigationController?.presentViewController(alert, animated: true, completion: nil)
+                
+                
+                self.navigationController?.present(alert, animated: true, completion: nil)
                 
             } else {
                 self.didLoadedDirections(response!)
@@ -114,10 +111,10 @@ class SBMapViewController: UIViewController, MKMapViewDelegate, CLLocationManage
         }
     }
     
-    func didLoadedDirections (response : MKDirectionsResponse) {
+    func didLoadedDirections (_ response : MKDirectionsResponse) {
         
         let route : MKRoute = response.routes.first!
-        mapView.addOverlay(route.polyline, level:.AboveRoads)
+        mapView.add(route.polyline, level:.aboveRoads)
         
         var zoomRect : MKMapRect = MKMapRectNull
         
@@ -133,34 +130,32 @@ class SBMapViewController: UIViewController, MKMapViewDelegate, CLLocationManage
     
     // MARK: ALL DELEGATE FUNCTIONS
     // MARK: Location Manager Delegate Function
-    func locationManager(manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         
     }
     
-    func locationManager(manager: CLLocationManager, didChangeAuthorizationStatus status: CLAuthorizationStatus) {
+    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         
-        if currentLocationManager.respondsToSelector("requestWhenInUseAuthorization") {
-            UIApplication.sharedApplication().sendAction("requestWhenInUseAuthorization",
-                to: currentLocationManager,
-                from: self,
-                forEvent: nil)
-            
-        }
+        UIApplication.shared.sendAction(#selector(CLLocationManager.requestWhenInUseAuthorization),
+                                                   to: currentLocationManager,
+                                                   from: self,
+                                                   for: nil)
+
         currentLocationManager.startUpdatingLocation()
     }
     
     // MARK: MapView Delegate Function
-    func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
+    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         
         if (annotation is MKUserLocation) {
             //if annotation is not an MKPointAnnotation (eg. MKUserLocation),
             //return nil so map draws default view for it (eg. blue dot)...
             return nil
         }
-        if annotation.isKindOfClass(SBMapViewAnnotation.self)  {
+        if annotation.isKind(of: SBMapViewAnnotation.self)  {
             let reuseId = "test"
             
-            var anView = mapView.dequeueReusableAnnotationViewWithIdentifier(reuseId)
+            var anView = mapView.dequeueReusableAnnotationView(withIdentifier: reuseId)
             if anView == nil {
                 anView = MKAnnotationView(annotation: annotation, reuseIdentifier: reuseId)
                 anView!.image = UIImage(named:"mapAnnotationImg")
@@ -178,9 +173,9 @@ class SBMapViewController: UIViewController, MKMapViewDelegate, CLLocationManage
         
     }
     
-    func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
+    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         
-        if view.annotation!.isKindOfClass(SBMapViewAnnotation.self)  {
+        if view.annotation!.isKind(of: SBMapViewAnnotation.self)  {
             
             let temp  = view.annotation as! SBMapViewAnnotation
             print(temp.discipline)
@@ -189,13 +184,13 @@ class SBMapViewController: UIViewController, MKMapViewDelegate, CLLocationManage
         
     }
     
-    func mapView(mapView: MKMapView, rendererForOverlay overlay: MKOverlay) -> MKOverlayRenderer {
+    func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
         
         // Plote Route
         
         let polylineRender : MKPolylineRenderer = MKPolylineRenderer (overlay: overlay)
         polylineRender.lineWidth = 3.0
-        polylineRender.strokeColor = UIColor.blueColor()
+        polylineRender.strokeColor = UIColor.blue
         return polylineRender
         
     }
